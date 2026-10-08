@@ -1,0 +1,9 @@
+CATATAN REFLEKSI - LANDING PAGE
+
+1. Keuntungan memisahkan header dan footer menjadi file component tersendiri
+
+Dengan memisahkan header dan footer menjadi file component, kode tidak perlu ditulis berulang-ulang di setiap halaman. Kalau ada perubahan, misalnya menu navigasi atau teks hak cipta, cukup mengubah satu file saja dan semua halaman yang memakainya ikut berubah. Hal ini menghemat waktu dan mengurangi risiko salah ketik atau lupa mengubah salah satu halaman. File halaman juga menjadi lebih pendek dan mudah dibaca karena hanya berisi isi utama halaman. Struktur proyek pun lebih rapi karena bagian tampilan yang berulang dipisahkan dari konten.
+
+2. Bagian halaman admin yang mengalami masalah yang sama
+
+Pada halaman-halaman admin (Buku, Kategori, Penulis, Pengguna, Profil), bagian sidebar dan topbar mengalami masalah yang sama seperti header/footer sebelum dipisah. Markup keduanya ditulis ulang secara identik di 14 file halaman, sehingga satu perubahan kecil harus dilakukan di banyak file sekaligus. Selain itu, data juga masih berupa variabel array mentah yang ditulis langsung di tiap halaman, bukan diambil dari repository berbentuk function. Dengan menjadikan sidebar dan topbar sebagai component, duplikasi ini bisa dihilangkan seperti pada header dan footer landing page.
