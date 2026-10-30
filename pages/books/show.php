@@ -1,9 +1,22 @@
 <?php
-$pageTitle = 'Detail Buku';
-$pageSubtitle = 'Informasi lengkap buku beserta kategori dan penulis';
-require_once __DIR__ . '/../../repositories/book-repository.php';
-$book = getBook();
+require_once __DIR__ . "/../../repositories/book-repository.php";
+require_once __DIR__ . "/../../repositories/category-repository.php";
+
+$id = $_GET['id'] ?? '';
+
+$book = getBook($id);
+
+if (!$book) {
+    header("Location: index.php");
+    exit();
+}
+
+$category = getCategory($book['category_id']);
+
+$pageTitle = "Detail Buku";
+$pageSubtitle = "Informasi lengkap buku beserta kategori dan penulis";
 ?>
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -14,10 +27,10 @@ $book = getBook();
 </head>
 <body>
   <div class="app-shell">
-  <?php require_once __DIR__ . '/../../components/admin/sidebar.php'; ?>
+  <?php require_once __DIR__ . "/../../components/admin/sidebar.php" ?>
 
     <main class="app-main">
-    <?php require_once __DIR__ . '/../../components/admin/topbar.php'; ?>
+    <?php require_once __DIR__ . "/../../components/admin/topbar.php" ?>
 
       <div class="app-content">
         <div class="detail-grid">
@@ -28,14 +41,16 @@ $book = getBook();
 
             <div class="detail-row">
               <div class="detail-label">Kategori</div>
-              <div class="detail-value"><span class="badge badge-muted"><?= $book['category'] ?></span></div>
+              <div class="detail-value"><span class="badge badge-muted"><?= $category['name'] ?></span></div>
             </div>
             <div class="detail-row">
               <div class="detail-label">Penulis</div>
               <div class="detail-value">
                 <div class="chip-list">
                   <?php foreach ($book['authors'] as $authorName): ?>
-                    <span class="chip"><?= $authorName ?></span>
+                    <span class="chip">
+                      <?= $authorName ?>
+                    </span>
                   <?php endforeach; ?>
                 </div>
               </div>
@@ -59,4 +74,5 @@ $book = getBook();
     </main>
   </div>
 </body>
+
 </html>
