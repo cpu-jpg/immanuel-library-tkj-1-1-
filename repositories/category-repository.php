@@ -1,21 +1,143 @@
 <?php
+require_once __DIR__ . "/../config/database.php";
 
-function getCategories()
+function getCategories($filters = [], $page = 1, $perPage = 10)
 {
-  $categories = [
-    ["id" => 1, "name" => "Fiksi",     "description" => "Novel dan cerita rekaan",       "total_books" => 3],
-    ["id" => 2, "name" => "Sains",     "description" => "Buku ilmu pengetahuan alam",     "total_books" => 0],
-    ["id" => 3, "name" => "Sejarah",   "description" => "Buku sejarah dan biografi",      "total_books" => 1],
-    ["id" => 4, "name" => "Teknologi", "description" => "Buku pemrograman dan teknologi", "total_books" => 0],
-  ];
+    global $pdo;
 
-  return $categories;
+    $offset = ($page - 1) * $perPage;
+
+    // Build dynamic query with filters
+    $whereClause = "";
+    $bindings = [];
+
+    if (!empty($filters['search'])) {
+        $whereClause = "WHERE name LIKE :search OR description LIKE :search";
+        $bindings['search'] = '%' . $filters['search'] . '%';
+    }
+
+    $query = "select c.id, c.name, c.description, count(b.id) as total_books from categories c
+              left join books b on c.id = b.category_id
+              {$whereClause}
+              group by c.id, c.name, c.description
+              limit :limit offset :offset ";
+    $stmt = $pdo->prepare($query);
+
+    // Bind parameters
+    foreach ($bindings as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    $stmt->bindValue('limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+
+    $stmt->execute();
+
+    $categories = $stmt->fetchAll();
+
+    return $categories;
 }
 
-
-function getCategory()
+function countCategories($filters = [])
 {
-  $category = ["id" => 1, "name" => "Fiksi", "description" => "Novel dan cerita rekaan"];
+    global $pdo;
 
-  return $category;
+    // Build dynamic query with filters
+    $whereClause = "";
+    $bindings = [];
+
+    if (!empty($filters['search'])) {
+        $whereClause = "WHERE name LIKE :search OR description LIKE :search";
+        $bindings['search'] = '%' . $filters['search'] . '%';
+    }
+
+    $query = "select count(*) as total from categories {$whereClause}";
+    $stmt = $pdo->prepare($query);
+    foreach ($bindings as $key => $value) {
+        $stmt->bindValue($key, $value);
+    }
+    $stmt->execute();
+
+    $result = $stmt->fetch();
+
+    return $result['total'];
+}
+
+function getCategory($id)
+{
+    global $pdo;
+
+    $query = "select id, name, description from categories where id = :id";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([
+        'id' => $id
+    ]);
+
+    $category = $stmt->fetch();
+
+    if (!$category) {
+        return null;
+    }
+
+    return $category;
+}
+
+function storeCategory($data)
+{
+    global $pdo;
+
+    try {
+        $name = $data['name'];
+        $description = $data['description'];
+
+        $query = "insert into categories (name, description) values (:name, :description)";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([
+            'name' => $name,
+            'description' => $description
+        ]);
+
+        return $pdo->lastInsertId();
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+function updateCategory($data)
+{
+    global $pdo;
+
+    try {
+        $id = $data['id'];
+        $name = $data['name'];
+        $description = $data['description'];
+
+        $query = "update categories set name = :name, description = :description where id = :id";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([
+            'name' => $name,
+            'description' => $description,
+            'id' => $id
+        ]);
+
+        return true;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+function deleteCategory($id)
+{
+    global $pdo;
+
+    try {
+        $query = "delete from categories where id = :id";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([
+            'id' => $id
+        ]);
+
+        return true;
+    } catch (PDOException $e) {
+        return false;
+    }
 }

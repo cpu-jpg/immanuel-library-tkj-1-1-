@@ -1,27 +1,111 @@
 <?php
-
+require_once __DIR__ . "/../config/database.php";
 
 function getAuthors()
 {
-  $authors = [
-    ["id" => 1, "name" => "Andrea Hirata",        "bio" => "Penulis asal Belitung, dikenal lewat novel Laskar Pelangi.", "total_books" => 1],
-    ["id" => 2, "name" => "Tere Liye",             "bio" => "Penulis novel populer Indonesia, dikenal lewat serial Bumi.", "total_books" => 1],
-    ["id" => 3, "name" => "J.K. Rowling",          "bio" => "Penulis asal Inggris, pencipta serial Harry Potter.", "total_books" => 1],
-    ["id" => 4, "name" => "Pramoedya Ananta Toer", "bio" => "Sastrawan Indonesia, dikenal lewat Tetralogi Buru.", "total_books" => 2],
-    ["id" => 5, "name" => "Sapardi Djoko Damono",  "bio" => "Penyair Indonesia, dikenal lewat puisi Hujan Bulan Juni.", "total_books" => 1],
-  ];
+    global $pdo;
 
-  return $authors;
+    $query = "select a.id, a.name, a.bio, count(ba.book_id) as total_books from authors a
+              left join book_author ba on a.id = ba.author_id
+              group by a.id, a.name, a.bio
+             ";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute();
+
+    $authors = $stmt->fetchAll();
+
+    return $authors;
 }
 
-
-function getAuthor()
+function getAuthor($id)
 {
-  $author = [
-    "id" => 1,
-    "name" => "Andrea Hirata",
-    "bio" => "Penulis asal Belitung, dikenal lewat novel Laskar Pelangi.",
-  ];
+    global $pdo;
 
-  return $author;
+    $query = "select id, name, bio from authors where id = :id";
+    $stmt = $pdo->prepare($query);
+    $stmt->execute([
+        'id' => $id
+    ]);
+
+    $author = $stmt->fetch();
+
+    if (!$author) {
+        return null;
+    }
+
+    return $author;
+}
+
+function storeAuthor($data)
+{
+    global $pdo;
+
+    try {
+        $name = $data['name'];
+        $bio = $data['bio'];
+
+        $query = "insert into authors (name, bio) values (:name, :bio)";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([
+            'name' => $name,
+            'bio' => $bio
+        ]);
+
+        return $pdo->lastInsertId();
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+function updateAuthor($data)
+{
+    global $pdo;
+
+    try {
+        $id = $data['id'];
+        $name = $data['name'];
+        $bio = $data['bio'];
+
+        $query = "update authors set name = :name, bio = :bio where id = :id";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([
+            'name' => $name,
+            'bio' => $bio,
+            'id' => $id
+        ]);
+
+        return true;
+    } catch (PDOException $e) {
+        return false;
+    }
+}
+
+function deleteAuthor($id)
+{
+    global $pdo;
+
+    try {
+        $pdo->beginTransaction();
+
+        
+        $query = "delete from book_author where author_id = :author_id";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([
+            'author_id' => $id
+        ]);
+
+   
+        $query = "delete from authors where id = :id";
+        $stmt = $pdo->prepare($query);
+        $stmt->execute([
+            'id' => $id
+        ]);
+
+        $pdo->commit();
+
+        return true;
+    } catch (PDOException $e) {
+        $pdo->rollBack();
+        return false;
+    }
 }
